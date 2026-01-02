@@ -31,10 +31,10 @@
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
 typedef enum{
-	on_hold  = 0,
-	released,
-	pressed,
-	on_none,
+	on_hold  	= 0x00,
+	released	= 0x01,
+	pressed		= 0x02,
+	on_none		= 0x03,
 }key_state_t;
 
 typedef enum{
@@ -44,8 +44,8 @@ typedef enum{
 typedef void (*key_cb_t)(void);
 typedef struct{
 	uint8_t					newSample;
-	key_state_t			state;
 	uint8_t 				pressedFlag;
+	key_state_t			state;
 	key_cb_t				callBack;
 }key_t;
 typedef void (*sensor_cb_t)(void);
@@ -64,14 +64,15 @@ typedef struct{
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-#define SWITCH_CLOSE1				(1 << 0)
-#define SWITCH_OPEN1				(1 << 1)
-#define SWITCH_LASER1				(1 << 2)
-#define BUTTON_OP						(1 << 3)
-#define BUTTON_SET					(1 << 4)
-#define SWITCH_LASER2				(1 << 5)
-#define SWITCH_CLOSE2				(1 << 6)
-#define SWITCH_OPEN2				(1 << 7)
+#define SWITCH_CLOSE1				0
+#define SWITCH_OPEN1				1
+#define SWITCH_LASER1				2
+#define BUTTON_OP						3
+#define BUTTON_SET					4
+#define SWITCH_LASER2				5
+#define SWITCH_CLOSE2				6
+#define SWITCH_OPEN2				7
+#define HC165_CONVERSION_TO_BIT(BYTE,BIT)    ((BYTE) >> (BIT) & 0x01)
 #define OP_KEY							0
 #define SET_KEY							1
 #define CLOSE_MICRO_SWITCH1	0	
@@ -154,7 +155,7 @@ int main(void)
 	
 	sensor_t sensors[5];
 	
-	
+	HAL_GPIO_WritePin(NSLEEP_GPIO_Port,NSLEEP_Pin,GPIO_PIN_SET);
 	HAL_TIM_Base_Start_IT(&htim2);
 	HAL_TIM_Base_Start_IT(&htim4);
   /* USER CODE END 2 */
@@ -169,6 +170,8 @@ int main(void)
     /* USER CODE BEGIN 3 */
 		if(flags.hc165ReadFlag){
 			flags.hc165ReadFlag = RESET;
+			keys[OP_KEY].newSample = HC165_CONVERSION_TO_BIT(hc165_out,BUTTON_OP);
+			keys[SET_KEY].newSample = HC165_CONVERSION_TO_BIT(hc165_out,BUTTON_SET);
 			hc165_stateMachine();
 		}
 		if(flags.sensorReadFlag){
@@ -182,7 +185,23 @@ int main(void)
 			update_keyState(keys,2);
 			// بررسي فشرده شدن  هر کليد
 			key_check_pressed(keys,2);
-			
+			if(keys[OP_KEY].pressedFlag){
+				keys[OP_KEY].pressedFlag = RESET;
+				//keys[OP_KEY].callBack();
+				HAL_GPIO_TogglePin(LED1_GPIO_Port,LED1_Pin);
+				//HAL_TIM_PWM_Start(&htim1,TIM_CHANNEL_1);
+				if(HAL_GPIO_ReadPin(LED1_GPIO_Port,LED1_Pin)){
+					HAL_TIM_PWM_Start(&htim1,TIM_CHANNEL_1);
+				}
+				else{
+					HAL_TIM_PWM_Stop(&htim1,TIM_CHANNEL_1);
+				}
+			}
+			if(keys[SET_KEY].pressedFlag){
+				keys[SET_KEY].pressedFlag = RESET;
+				//keys[SET_KEY].callBack();
+				HAL_GPIO_TogglePin(LED1_GPIO_Port,LED2_Pin);
+			}
 		}
   }
   /* USER CODE END 3 */
@@ -237,7 +256,7 @@ void SystemClock_Config(void)
 /* USER CODE BEGIN 4 */
 void key_init(key_t* key ,uint16_t len){
 	while(len-- > 0){
-		key->newSample 		= on_none;
+		key->newSample 		= SET;
 		key->state				= on_none;
 		key->pressedFlag 	= RESET;
 		key++;
@@ -252,7 +271,7 @@ void update_keyState(key_t* key ,uint16_t len){
 void key_check_pressed(key_t* key ,uint16_t len){
 	while(len-- > 0){
 		if(key->state == pressed){
-			key->pressedFlag = 1;
+			key->pressedFlag = SET;
 		}
 		key++;
 	}
@@ -265,22 +284,20 @@ void update_sensorState(sensor_t* sensor){
 	sensor->state = sensor->newSample;
 }
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim){
-	switch((uint32_t)htim->Instance){
-		case (uint32_t)TIM2:{
-			flags.hc165ReadFlag = SET;
-			break;
+	if(htim->Instance == TIM2){
+		flags.hc165ReadFlag = SET;
+		key_timer++;
+		if(key_timer >= 30){
+			key_timer 						= RESET;
+			flags.keyReadFlag 		= SET;
 		}
-		case (uint32_t)TIM4:{
-			flags.sensorReadFlag 	= SET;
-			if(++key_timer >= 3){
-				key_timer 						= RESET;
-				flags.keyReadFlag 		= SET;
-			}
-			break;
-		}
-		default:{
-			
-			break;
+	}
+	if(htim->Instance == TIM4){
+		flags.sensorReadFlag 	= SET;
+		key_timer++;
+		if(key_timer >= 3){
+			key_timer 						= RESET;
+			flags.keyReadFlag 		= SET;
 		}
 	}
 }

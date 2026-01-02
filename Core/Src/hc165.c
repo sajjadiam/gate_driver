@@ -1,7 +1,7 @@
 #include "hc165.h"
 #include "main.h"
 
-unsigned char hc165_out = 0xFF;
+uint8_t hc165_out = 0xFF;
 static int8_t hc165_bitCount = 0;
 static hc165_ms_t hc165State = hc165_init;
 typedef void(*hc165_Func)(void);
@@ -16,7 +16,7 @@ void hc165_parallelTrig(void){
 	HAL_GPIO_WritePin(HC165_PL_GPIO_Port,HC165_PL_Pin,GPIO_PIN_RESET);
 }
 void hc165_parallelLoadUnTrig(void){
-	HAL_GPIO_WritePin(HC165_PL_GPIO_Port,HC165_PL_Pin,GPIO_PIN_RESET);
+	HAL_GPIO_WritePin(HC165_PL_GPIO_Port,HC165_PL_Pin,GPIO_PIN_SET);
 }
 uint8_t hc165_dataRead(void){
 	return (HAL_GPIO_ReadPin(HC165_DATA_GPIO_Port,HC165_DATA_Pin) == GPIO_PIN_SET) ? 1 : 0;
