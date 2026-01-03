@@ -286,11 +286,11 @@ void update_sensorState(sensor_t* sensor){
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim){
 	if(htim->Instance == TIM2){
 		flags.hc165ReadFlag = SET;
-		key_timer++;
+		/*key_timer++;
 		if(key_timer >= 30){
 			key_timer 						= RESET;
 			flags.keyReadFlag 		= SET;
-		}
+		}*/
 	}
 	if(htim->Instance == TIM4){
 		flags.sensorReadFlag 	= SET;

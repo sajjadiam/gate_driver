@@ -1,5 +1,6 @@
 --cpu Cortex-M3
 "motor_driver_test1\startup_stm32f103xb.o"
+"motor_driver_test1\hc165.o"
 "motor_driver_test1\main.o"
 "motor_driver_test1\gpio.o"
 "motor_driver_test1\adc.o"
@@ -7,7 +8,7 @@
 "motor_driver_test1\tim.o"
 "motor_driver_test1\stm32f1xx_it.o"
 "motor_driver_test1\stm32f1xx_hal_msp.o"
-"motor_driver_test1\hc165.o"
+"motor_driver_test1\trapezoidal.o"
 "motor_driver_test1\stm32f1xx_hal_gpio_ex.o"
 "motor_driver_test1\stm32f1xx_hal_adc.o"
 "motor_driver_test1\stm32f1xx_hal_adc_ex.o"
