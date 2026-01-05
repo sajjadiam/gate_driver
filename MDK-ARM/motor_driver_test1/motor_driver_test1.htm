@@ -3,7 +3,7 @@
 <title>Static Call Graph - [motor_driver_test1\motor_driver_test1.axf]</title></head>
 <body><HR>
 <H1>Static Call Graph for image motor_driver_test1\motor_driver_test1.axf</H1><HR>
-<BR><P>#&#060CALLGRAPH&#062# ARM Linker, 6190004: Last Updated: Sun Jan  4 16:56:54 2026
+<BR><P>#&#060CALLGRAPH&#062# ARM Linker, 6190004: Last Updated: Mon Jan  5 09:24:00 2026
 <BR><P>
 <H3>Maximum Stack Usage =        228 bytes + Unknown(Functions without stacksize, Cycles, Untraceable Function Pointers)</H3><H3>
 Call chain for Maximum Stack Depth:</H3>
@@ -713,8 +713,6 @@ Global Symbols
 <BR><BR>[Stack]<UL><LI>Max Depth = 8<LI>Call Chain = HAL_TIM_PWM_Stop
 </UL>
 <BR>[Called By]<UL><LI><a href="#[43]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;trapezoidal_func_idle
-<LI><a href="#[42]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;sensor_callBack_open2
-<LI><a href="#[3e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;sensor_callBack_close1
 </UL>
 
 <P><STRONG><a name="[70]"></a>HAL_TIM_PeriodElapsedCallback</STRONG> (Thumb, 98 bytes, Stack size 0 bytes, main.o(.text.HAL_TIM_PeriodElapsedCallback))
@@ -912,11 +910,7 @@ Global Symbols
 <BR>[Called By]<UL><LI><a href="#[4f]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__rt_entry_main
 </UL>
 
-<P><STRONG><a name="[3e]"></a>sensor_callBack_close1</STRONG> (Thumb, 14 bytes, Stack size 0 bytes, main.o(.text.sensor_callBack_close1))
-<BR><BR>[Stack]<UL><LI>Max Depth = 8<LI>Call Chain = sensor_callBack_close1 &rArr; HAL_TIM_PWM_Stop
-</UL>
-<BR>[Calls]<UL><LI><a href="#[8c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_TIM_PWM_Stop
-</UL>
+<P><STRONG><a name="[3e]"></a>sensor_callBack_close1</STRONG> (Thumb, 18 bytes, Stack size 0 bytes, main.o(.text.sensor_callBack_close1))
 <BR>[Address Reference Count : 1]<UL><LI> main.o(.text.main)
 </UL>
 <P><STRONG><a name="[41]"></a>sensor_callBack_close2</STRONG> (Thumb, 16 bytes, Stack size 0 bytes, main.o(.text.sensor_callBack_close2))
@@ -934,14 +928,10 @@ Global Symbols
 </UL>
 <BR>[Address Reference Count : 1]<UL><LI> main.o(.text.main)
 </UL>
-<P><STRONG><a name="[42]"></a>sensor_callBack_open2</STRONG> (Thumb, 14 bytes, Stack size 0 bytes, main.o(.text.sensor_callBack_open2))
-<BR><BR>[Stack]<UL><LI>Max Depth = 8<LI>Call Chain = sensor_callBack_open2 &rArr; HAL_TIM_PWM_Stop
-</UL>
-<BR>[Calls]<UL><LI><a href="#[8c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_TIM_PWM_Stop
-</UL>
+<P><STRONG><a name="[42]"></a>sensor_callBack_open2</STRONG> (Thumb, 18 bytes, Stack size 0 bytes, main.o(.text.sensor_callBack_open2))
 <BR>[Address Reference Count : 1]<UL><LI> main.o(.text.main)
 </UL>
-<P><STRONG><a name="[88]"></a>trapezoidal_func_init</STRONG> (Thumb, 12 bytes, Stack size 0 bytes, trapezoidal.o(.text.trapezoidal_func_init))
+<P><STRONG><a name="[88]"></a>trapezoidal_func_init</STRONG> (Thumb, 14 bytes, Stack size 0 bytes, trapezoidal.o(.text.trapezoidal_func_init))
 <BR><BR>[Called By]<UL><LI><a href="#[50]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;main
 </UL>
 
@@ -1043,26 +1033,26 @@ Local Symbols
 </UL>
 <BR>[Address Reference Count : 1]<UL><LI> hc165.o(.text.hc165_stateMachine)
 </UL>
-<P><STRONG><a name="[43]"></a>trapezoidal_func_idle</STRONG> (Thumb, 44 bytes, Stack size 8 bytes, trapezoidal.o(.text.trapezoidal_func_idle))
+<P><STRONG><a name="[43]"></a>trapezoidal_func_idle</STRONG> (Thumb, 56 bytes, Stack size 8 bytes, trapezoidal.o(.text.trapezoidal_func_idle))
 <BR><BR>[Stack]<UL><LI>Max Depth = 16<LI>Call Chain = trapezoidal_func_idle &rArr; HAL_TIM_PWM_Stop
 </UL>
 <BR>[Calls]<UL><LI><a href="#[8c]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_TIM_PWM_Stop
 </UL>
 <BR>[Address Reference Count : 1]<UL><LI> trapezoidal.o(.text.trapezoidal_stateMachine)
 </UL>
-<P><STRONG><a name="[44]"></a>trapezoidal_func_rampUp</STRONG> (Thumb, 204 bytes, Stack size 16 bytes, trapezoidal.o(.text.trapezoidal_func_rampUp))
+<P><STRONG><a name="[44]"></a>trapezoidal_func_rampUp</STRONG> (Thumb, 218 bytes, Stack size 16 bytes, trapezoidal.o(.text.trapezoidal_func_rampUp))
 <BR><BR>[Stack]<UL><LI>Max Depth = 16<LI>Call Chain = trapezoidal_func_rampUp
 </UL>
 <BR>[Calls]<UL><LI><a href="#[92]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;HAL_TIM_PWM_Start
 </UL>
 <BR>[Address Reference Count : 1]<UL><LI> trapezoidal.o(.text.trapezoidal_stateMachine)
 </UL>
-<P><STRONG><a name="[45]"></a>trapezoidal_func_hold</STRONG> (Thumb, 124 bytes, Stack size 8 bytes, trapezoidal.o(.text.trapezoidal_func_hold))
-<BR><BR>[Stack]<UL><LI>Max Depth = 8<LI>Call Chain = trapezoidal_func_hold
+<P><STRONG><a name="[45]"></a>trapezoidal_func_hold</STRONG> (Thumb, 144 bytes, Stack size 16 bytes, trapezoidal.o(.text.trapezoidal_func_hold))
+<BR><BR>[Stack]<UL><LI>Max Depth = 16<LI>Call Chain = trapezoidal_func_hold
 </UL>
 <BR>[Address Reference Count : 1]<UL><LI> trapezoidal.o(.text.trapezoidal_stateMachine)
 </UL>
-<P><STRONG><a name="[46]"></a>trapezoidal_func_rampDown</STRONG> (Thumb, 160 bytes, Stack size 24 bytes, trapezoidal.o(.text.trapezoidal_func_rampDown))
+<P><STRONG><a name="[46]"></a>trapezoidal_func_rampDown</STRONG> (Thumb, 176 bytes, Stack size 24 bytes, trapezoidal.o(.text.trapezoidal_func_rampDown))
 <BR><BR>[Stack]<UL><LI>Max Depth = 40<LI>Call Chain = trapezoidal_func_rampDown &rArr; __aeabi_fmul
 </UL>
 <BR>[Calls]<UL><LI><a href="#[8e]">&gt;&gt;</a>&nbsp;&nbsp;&nbsp;__aeabi_fmul

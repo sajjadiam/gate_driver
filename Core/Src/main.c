@@ -307,7 +307,7 @@ void update_sensorState			(sensor_t* sensor ,uint16_t len){
 	}
 }
 void sensor_callBack_close1	(void){
-	HAL_TIM_PWM_Stop(&htim1,TIM_CHANNEL_1);
+	trapProfile.flag.stopCMD = SET;
 }
 void sensor_callBack_open1	(void){
 	HAL_GPIO_TogglePin(LED1_GPIO_Port,LED1_Pin);
@@ -319,7 +319,7 @@ void sensor_callBack_close2	(void){
 	HAL_GPIO_TogglePin(LED1_GPIO_Port,LED1_Pin);
 }
 void sensor_callBack_open2	(void){
-	HAL_TIM_PWM_Stop(&htim1,TIM_CHANNEL_1);
+	trapProfile.flag.stopCMD = SET;
 }
 void sensor_callBack_handler(sensor_t* sensor ,uint16_t len){
 	while(len-- > 0){

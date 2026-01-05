@@ -5,9 +5,9 @@
 #include "stm32f1xx_hal.h"
 
 
-#define RAMP_UP_TIME			2000
-#define RAMP_DOWN_TIME		2000
-#define HOLD_TIME					100
+#define RAMP_UP_TIME			5000
+#define RAMP_DOWN_TIME		5000
+#define HOLD_TIME					5000
 #define SET								1
 #define RESET							0
 
