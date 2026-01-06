@@ -7,12 +7,12 @@ void trapezoidal_func_init(trapezoidal_t* trap , TIM_HandleTypeDef* htim,uint32_
 	trap->timer 					= htim;
 	trap->channel 				= channel;
 	trap->vMax 						= pwmMaxPrecent;
+	trap->rampUpTime			= RAMP_UP_TIME;	//default value
+	trap->rampDownTime		= RAMP_DOWN_TIME; //default value
+	trap->holdTime				= HOLD_TIME; //default value
 	trap->state 					= ts_idle;
 }
 static void trapezoidal_func_idle(trapezoidal_t* trap){
-	if(trap->flag.stopCMD){
-		trap->flag.stopCMD = 0;
-	}
 	// 1. frist in
 	if(!trap->flag.idleFristIn){
 		trap->flag.idleFristIn = SET;
@@ -37,7 +37,7 @@ static void trapezoidal_func_rampUp(trapezoidal_t* trap){
 	// 2. frist in
 	if(!trap->flag.rampUpFristIn){
 		trap->flag.rampUpFristIn = SET;
-		trap->couter = 1000;
+		trap->couter = 0.1 * __HAL_TIM_GetAutoreload(trap->timer);
 		__HAL_TIM_SetCompare(trap->timer,trap->channel,RESET);
 		HAL_TIM_PWM_Start(trap->timer,trap->channel);
 	}
@@ -67,6 +67,9 @@ static void trapezoidal_func_hold(trapezoidal_t* trap){
 		trap->flag.holdFristIn = RESET;
 		trap->state = ts_idle;
 	}
+	if(trap->flag.startCMD){
+		trap->flag.startCMD = RESET;
+	}
 	// 2. frist in
 	if(!trap->flag.holdFristIn){
 		trap->flag.holdFristIn = SET;
@@ -93,6 +96,10 @@ static void trapezoidal_func_rampDown(trapezoidal_t* trap){
 		trap->flag.stopCMD = RESET;
 		trap->state = ts_idle;
 		trap->flag.rampDownFristIn = RESET;
+		trap->flag.startCMD = RESET;
+	}
+	if(trap->flag.startCMD){
+		trap->flag.startCMD = RESET;
 	}
 	// 2. frist in
 	if(!trap->flag.rampDownFristIn){

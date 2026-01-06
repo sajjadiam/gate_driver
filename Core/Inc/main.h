@@ -85,10 +85,10 @@ void Error_Handler(void);
 #define PH1_GPIO_Port GPIOB
 #define PH2_Pin GPIO_PIN_13
 #define PH2_GPIO_Port GPIOB
-#define NFAULT1_Pin GPIO_PIN_14
+#define NFAULT2_Pin GPIO_PIN_14
+#define NFAULT2_GPIO_Port GPIOB
+#define NFAULT1_Pin GPIO_PIN_15
 #define NFAULT1_GPIO_Port GPIOB
-#define NFAULT1B15_Pin GPIO_PIN_15
-#define NFAULT1B15_GPIO_Port GPIOB
 #define NSLEEP_Pin GPIO_PIN_10
 #define NSLEEP_GPIO_Port GPIOA
 

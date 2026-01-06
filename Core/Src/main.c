@@ -26,7 +26,7 @@
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 #include "hc165.h"
-#include "trapezoidal.h"
+#include "motor.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -53,12 +53,14 @@ typedef void (*sensor_cb_t)(void);
 typedef struct{
 	uint8_t					newSample;
 	sensor_state_t	state;
-	sensor_cb_t			callBack;
+	sensor_cb_t			fallingEdgecallBack;
+	sensor_cb_t			holdDowncallBack;
 }sensor_t;
 typedef struct{
-	uint8_t keyReadFlag			: 1;
-	uint8_t sensorReadFlag	: 1;
-	uint8_t hc165ReadFlag		: 1;
+	uint8_t keyRead			: 1;
+	uint8_t sensorRead	: 1;
+	uint8_t hc165Read		: 1;
+	uint8_t motorUpdate	: 1;
 }Flag_t;
 /* USER CODE END PTD */
 
@@ -80,8 +82,6 @@ typedef struct{
 #define LASER_OUTPUT													2
 #define CLOSE_MICRO_SWITCH2										3
 #define OPEN_MICRO_SWITCH2										4
-#define SET																		1
-#define RESET																	0
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -93,8 +93,8 @@ typedef struct{
 
 /* USER CODE BEGIN PV */
 uint8_t key_timer = 0;
-Flag_t 	flags 		= {0};
-trapezoidal_t trapProfile = {0};
+volatile Flag_t 	flags 		= {0};
+motor_t motor1 = {0};
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -110,11 +110,19 @@ void keys_handler						(key_t* key ,uint16_t len);
 
 void sensor_init						(sensor_t* sensor ,uint16_t len);
 void update_sensorState			(sensor_t* sensor ,uint16_t len);
-void sensor_callBack_close1	(void);
-void sensor_callBack_open1	(void);
-void sensor_callBack_laser	(void);
-void sensor_callBack_close2	(void);
-void sensor_callBack_open2	(void);
+
+void sensor_fcallBack_close1	(void);
+void sensor_fcallBack_open1	(void);
+void sensor_fcallBack_laser	(void);
+void sensor_fcallBack_close2	(void);
+void sensor_fcallBack_open2	(void);
+
+void sensor_hcallBack_close1	(void);
+void sensor_hcallBack_open1	(void);
+void sensor_hcallBack_laser	(void);
+void sensor_hcallBack_close2	(void);
+void sensor_hcallBack_open2	(void);
+
 void sensor_callBack_handler(sensor_t* sensor ,uint16_t len);
 void sensor_handler					(sensor_t* sensor ,uint16_t len);
 
@@ -172,16 +180,37 @@ int main(void)
 	/* sensors init */
 	sensor_t sensors[5];
 	sensor_init(sensors,5);
-	sensors[CLOSE_MICRO_SWITCH1].callBack = sensor_callBack_close1;
-	sensors[OPEN_MICRO_SWITCH1].callBack	= sensor_callBack_open1;
-	sensors[LASER_OUTPUT].callBack				= sensor_callBack_laser;
-	sensors[CLOSE_MICRO_SWITCH2].callBack = sensor_callBack_close2;
-	sensors[OPEN_MICRO_SWITCH2].callBack	= sensor_callBack_open2;
+	sensors[CLOSE_MICRO_SWITCH1].fallingEdgecallBack 	= sensor_fcallBack_close1;
+	sensors[OPEN_MICRO_SWITCH1].fallingEdgecallBack		= sensor_fcallBack_open1;
+	sensors[LASER_OUTPUT].fallingEdgecallBack					= sensor_fcallBack_laser;
+	sensors[CLOSE_MICRO_SWITCH2].fallingEdgecallBack 	= sensor_fcallBack_close2;
+	sensors[OPEN_MICRO_SWITCH2].fallingEdgecallBack		= sensor_fcallBack_open2;
+	sensors[CLOSE_MICRO_SWITCH1].fallingEdgecallBack 	= sensor_fcallBack_close1;
+	sensors[OPEN_MICRO_SWITCH1].fallingEdgecallBack		= sensor_fcallBack_open1;
+	sensors[LASER_OUTPUT].fallingEdgecallBack					= sensor_fcallBack_laser;
+	sensors[CLOSE_MICRO_SWITCH2].fallingEdgecallBack 	= sensor_fcallBack_close2;
+	sensors[OPEN_MICRO_SWITCH2].fallingEdgecallBack		= sensor_fcallBack_open2;
 	/*    */
-	
-	trapezoidal_func_init(&trapProfile,&htim1,TIM_CHANNEL_1,70);
+	// بايد به تابع تبديلش کنم
+	motor_cfg_t motor_cfg; 
+	motor_cfg.pin_dir.port 					= PH1_GPIO_Port;
+	motor_cfg.pin_dir.pin  					= PH1_Pin;
+	motor_cfg.pin_dir.active_lvl 		= SET;
+	motor_cfg.pin_sleep.port 				= NSLEEP_GPIO_Port;			
+	motor_cfg.pin_sleep.pin  				= NSLEEP_Pin;
+	motor_cfg.pin_sleep.active_lvl 	= SET;
+	motor_cfg.pin_nfault.port				= NFAULT1_GPIO_Port;
+	motor_cfg.pin_nfault.pin				= NFAULT1_Pin;
+	motor_cfg.pin_nfault.active_lvl = RESET;
+	motor_cfg.move_timeout_ms				= 1000;
+
+	motor_init_pins(&motor1,&motor_cfg);
+	motor_init_timer(&motor1,&htim1,TIM_CHANNEL_1,70);
+	HAL_GPIO_WritePin(motor1.cfg.pin_sleep.port,motor1.cfg.pin_sleep.pin,GPIO_PIN_SET);
+	HAL_GPIO_WritePin(motor1.cfg.pin_dir.port,motor1.cfg.pin_dir.pin,GPIO_PIN_RESET);
 	/*    */
-	HAL_GPIO_WritePin(NSLEEP_GPIO_Port,NSLEEP_Pin,GPIO_PIN_SET);
+	start_motor_lowSpeed(&motor1);
+	HAL_Delay(400);
 	HAL_TIM_Base_Start_IT(&htim2);
 	HAL_TIM_Base_Start_IT(&htim4);
   /* USER CODE END 2 */
@@ -194,19 +223,22 @@ int main(void)
     /* USER CODE END WHILE */
 
     /* USER CODE BEGIN 3 */
-		if(flags.hc165ReadFlag){
-			flags.hc165ReadFlag 		= RESET;
+		if(flags.hc165Read){
+			flags.hc165Read 		= RESET_FLAG;
 			update_keys_and_sensors_smple(hc165_out,keys,sensors);
 			hc165_stateMachine();
-			trapezoidal_stateMachine(&trapProfile);
 		}
-		if(flags.sensorReadFlag){
-			flags.sensorReadFlag = RESET;
+		if(flags.motorUpdate){
+			flags.motorUpdate = RESET_FLAG;
+			motor_handler(&motor1);
+		}
+		if(flags.sensorRead){
+			flags.sensorRead = RESET_FLAG;
 			sensor_handler(sensors,5);
 		}
 		// قبلش بايد نمونه کليد رو آپديت کنم از hc165
-		if(flags.keyReadFlag){ // update key state
-			flags.keyReadFlag = RESET;
+		if(flags.keyRead){ // update key state
+			flags.keyRead = RESET_FLAG;
 			keys_handler(keys,2);
 		}
   }
@@ -217,7 +249,8 @@ int main(void)
   * @brief System Clock Configuration
   * @retval None
   */
-void SystemClock_Config(void){
+void SystemClock_Config(void)
+{
   RCC_OscInitTypeDef RCC_OscInitStruct = {0};
   RCC_ClkInitTypeDef RCC_ClkInitStruct = {0};
   RCC_PeriphCLKInitTypeDef PeriphClkInit = {0};
@@ -232,7 +265,8 @@ void SystemClock_Config(void){
   RCC_OscInitStruct.PLL.PLLState = RCC_PLL_ON;
   RCC_OscInitStruct.PLL.PLLSource = RCC_PLLSOURCE_HSE;
   RCC_OscInitStruct.PLL.PLLMUL = RCC_PLL_MUL9;
-  if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK){
+  if (HAL_RCC_OscConfig(&RCC_OscInitStruct) != HAL_OK)
+  {
     Error_Handler();
   }
 
@@ -272,12 +306,15 @@ void update_keyState(key_t* key ,uint16_t len){
 	}
 }
 void key_callBack_op(void){
-	HAL_GPIO_TogglePin(LED1_GPIO_Port,LED1_Pin);
-	trapProfile.flag.startCMD = SET;
+	if(motor1.startMode == MOTOR_START_LOW_SPEED){
+		//HAL_TIM_PWM_Start(motor1.trap.timer,motor1.trap.channel);
+	}
+	else{
+		motor1.flag.start_pending = SET;
+	}
 }
 void key_callBack_set(void){
-	HAL_GPIO_TogglePin(LED2_GPIO_Port,LED2_Pin);
-	trapProfile.flag.stopCMD = SET;
+	motor1.flag.stop_pending = SET;
 }
 void key_callBack_handler(key_t* key ,uint16_t len){
 	while(len-- > 0){
@@ -306,25 +343,57 @@ void update_sensorState			(sensor_t* sensor ,uint16_t len){
 		sensor++;
 	}
 }
-void sensor_callBack_close1	(void){
-	trapProfile.flag.stopCMD = SET;
+void sensor_fcallBack_close1(void){
+	if(motor1.startMode == MOTOR_START_LOW_SPEED){
+		motor1.cfg.pin_dir.active_lvl = 1;
+		motor1.flag.captureDirEdge 		= 1;
+		motor1.pos = motor_pos_close;
+	}
 }
-void sensor_callBack_open1	(void){
-	HAL_GPIO_TogglePin(LED1_GPIO_Port,LED1_Pin);
+void sensor_fcallBack_open1	(void){
+	
 }
-void sensor_callBack_laser	(void){
-	HAL_GPIO_TogglePin(LED1_GPIO_Port,LED1_Pin);
+void sensor_fcallBack_laser	(void){
+	
 }
-void sensor_callBack_close2	(void){
-	HAL_GPIO_TogglePin(LED1_GPIO_Port,LED1_Pin);
+void sensor_fcallBack_close2(void){
+	
 }
-void sensor_callBack_open2	(void){
-	trapProfile.flag.stopCMD = SET;
+void sensor_fcallBack_open2	(void){
+	if(motor1.startMode == MOTOR_START_LOW_SPEED){
+		motor1.cfg.pin_dir.active_lvl = 0;
+		motor1.flag.captureDirEdge 		= 1;
+		motor1.pos = motor_pos_open;
+	}
+}
+void sensor_hcallBack_close1(void){
+	if(motor1.startMode == MOTOR_START_LOW_SPEED){
+		motor1.flag.captureDirACT = 1;
+		motor1.pos = motor_pos_close;
+	}
+}
+void sensor_hcallBack_open1	(void){
+	
+}
+void sensor_hcallBack_laser	(void){
+	
+}
+void sensor_hcallBack_close2(void){
+	
+}
+void sensor_hcallBack_open2	(void){
+	if(motor1.startMode == MOTOR_START_LOW_SPEED){
+		motor1.flag.captureDirACT = 1;
+		motor1.pos = motor_pos_open;
+	}
 }
 void sensor_callBack_handler(sensor_t* sensor ,uint16_t len){
 	while(len-- > 0){
 		if(sensor->state == sensor_faling_edge){
-			sensor->callBack();
+			sensor->fallingEdgecallBack();
+		}
+		else if(sensor->state == sensor_active_state){
+			sensor->holdDowncallBack();
 		}
 		sensor++;
 	}
@@ -337,14 +406,15 @@ void sensor_handler(sensor_t* sensor ,uint16_t len){
 }
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef* htim){
 	if(htim->Instance == TIM2){
-		flags.hc165ReadFlag 		= SET;
+		flags.hc165Read 		= SET_FLAG;
+		flags.motorUpdate		= SET_FLAG;
 	}
 	if(htim->Instance == TIM4){
-		flags.sensorReadFlag 		= SET;
+		flags.sensorRead 		= SET_FLAG;
 		key_timer++;
 		if(key_timer >= 3){
-			key_timer 						= RESET;
-			flags.keyReadFlag 		= SET;
+			key_timer 				= RESET;
+			flags.keyRead 		= SET_FLAG;
 		}
 	}
 }

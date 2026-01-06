@@ -400,6 +400,31 @@
               <FilePath>..\Core\Src\hc165.c</FilePath>
             </File>
             <File>
+              <FileName>trapezoidal.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Core\Src\trapezoidal.c</FilePath>
+            </File>
+            <File>
+              <FileName>motor.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Core\Src\motor.c</FilePath>
+            </File>
+            <File>
+              <FileName>gate.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Core\Src\gate.c</FilePath>
+            </File>
+            <File>
+              <FileName>ntc.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Core\Src\ntc.c</FilePath>
+            </File>
+            <File>
+              <FileName>fan.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>..\Core\Src\fan.c</FilePath>
+            </File>
+            <File>
               <FileName>main.c</FileName>
               <FileType>1</FileType>
               <FilePath>../Core/Src/main.c</FilePath>
@@ -433,11 +458,6 @@
               <FileName>stm32f1xx_hal_msp.c</FileName>
               <FileType>1</FileType>
               <FilePath>../Core/Src/stm32f1xx_hal_msp.c</FilePath>
-            </File>
-            <File>
-              <FileName>trapezoidal.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>..\Core\Src\trapezoidal.c</FilePath>
             </File>
           </Files>
         </Group>
