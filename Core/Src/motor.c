@@ -77,9 +77,10 @@ void motor_clear_fault(motor_t *m){
 }
 void start_motor_lowSpeed(motor_t *m){
 	m->startMode = MOTOR_START_LOW_SPEED;
-	uint16_t ccr = (0.2f * __HAL_TIM_GetAutoreload(m->trap.timer));
+	uint16_t ccr = (0.5f * __HAL_TIM_GetAutoreload(m->trap.timer));
 	__HAL_TIM_SetCompare(m->trap.timer,m->trap.channel,ccr);
 	HAL_GPIO_WritePin(m->cfg.pin_sleep.port,m->cfg.pin_sleep.pin,GPIO_PIN_SET);
+	HAL_GPIO_WritePin(m->cfg.pin_dir.port,m->cfg.pin_dir.pin,GPIO_PIN_SET);
 	HAL_TIM_PWM_Start(m->trap.timer,m->trap.channel);
 }
 void motor_handler(motor_t *m){
@@ -89,33 +90,24 @@ void motor_handler(motor_t *m){
 		case MOTOR_START_LOW_SPEED:{
 			if(m->flag.captureDirEdge){
 				m->flag.captureDirEdge = 0;
-				if(m->pos == motor_pos_close){
-					HAL_GPIO_WritePin(m->cfg.pin_dir.port,m->cfg.pin_dir.pin,m->cfg.pin_dir.active_lvl);
-					m->startMode = MOTOR_START_TRAPEZOIDAL;
-					m->flag.start_pending = 1;
-				}
-				else if(m->pos == motor_pos_open){
-					HAL_GPIO_WritePin(m->cfg.pin_dir.port,m->cfg.pin_dir.pin,!m->cfg.pin_dir.active_lvl);
-					m->startMode = MOTOR_START_TRAPEZOIDAL;
-					m->flag.start_pending = 1;
-				}
+				m->startMode = MOTOR_START_TRAPEZOIDAL;
 			}
 			else if(m->flag.captureDirACT){
 				m->flag.captureDirACT = 0;
-				if(m->pos == motor_pos_close){
-					HAL_GPIO_WritePin(m->cfg.pin_dir.port,m->cfg.pin_dir.pin,m->cfg.pin_dir.active_lvl);
-					m->startMode = MOTOR_START_TRAPEZOIDAL;
-					m->flag.start_pending = 1;
-				}
-				else if(m->pos == motor_pos_open){
-					HAL_GPIO_WritePin(m->cfg.pin_dir.port,m->cfg.pin_dir.pin,!m->cfg.pin_dir.active_lvl);
-					m->startMode = MOTOR_START_TRAPEZOIDAL;
-					m->flag.start_pending = 1;
-				}
+				m->startMode = MOTOR_START_TRAPEZOIDAL;
 			}
 			break;
 		}
 		case MOTOR_START_TRAPEZOIDAL:{
+			if(m->pos == motor_pos_close){
+				HAL_GPIO_WritePin(m->cfg.pin_dir.port,m->cfg.pin_dir.pin,(m->cfg.pin_dir.active_lvl & 0x01));
+			}
+			else if(m->pos == motor_pos_open){
+				HAL_GPIO_WritePin(m->cfg.pin_dir.port,m->cfg.pin_dir.pin,(~m->cfg.pin_dir.active_lvl & 0x01));
+			}
+			else{
+				m->pos = motor_pos_float;
+			}
 			trapezoidal_stateMachine(&m->trap);
 			break;
 		}

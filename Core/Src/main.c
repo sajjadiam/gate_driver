@@ -185,11 +185,11 @@ int main(void)
 	sensors[LASER_OUTPUT].fallingEdgecallBack					= sensor_fcallBack_laser;
 	sensors[CLOSE_MICRO_SWITCH2].fallingEdgecallBack 	= sensor_fcallBack_close2;
 	sensors[OPEN_MICRO_SWITCH2].fallingEdgecallBack		= sensor_fcallBack_open2;
-	sensors[CLOSE_MICRO_SWITCH1].fallingEdgecallBack 	= sensor_fcallBack_close1;
-	sensors[OPEN_MICRO_SWITCH1].fallingEdgecallBack		= sensor_fcallBack_open1;
-	sensors[LASER_OUTPUT].fallingEdgecallBack					= sensor_fcallBack_laser;
-	sensors[CLOSE_MICRO_SWITCH2].fallingEdgecallBack 	= sensor_fcallBack_close2;
-	sensors[OPEN_MICRO_SWITCH2].fallingEdgecallBack		= sensor_fcallBack_open2;
+	sensors[CLOSE_MICRO_SWITCH1].holdDowncallBack 		= sensor_hcallBack_close1;
+	sensors[OPEN_MICRO_SWITCH1].holdDowncallBack			= sensor_hcallBack_open1;
+	sensors[LASER_OUTPUT].holdDowncallBack						= sensor_hcallBack_laser;
+	sensors[CLOSE_MICRO_SWITCH2].holdDowncallBack 		= sensor_hcallBack_close2;
+	sensors[OPEN_MICRO_SWITCH2].holdDowncallBack			= sensor_hcallBack_open2;
 	/*    */
 	// بايد به تابع تبديلش کنم
 	motor_cfg_t motor_cfg; 
@@ -207,10 +207,9 @@ int main(void)
 	motor_init_pins(&motor1,&motor_cfg);
 	motor_init_timer(&motor1,&htim1,TIM_CHANNEL_1,70);
 	HAL_GPIO_WritePin(motor1.cfg.pin_sleep.port,motor1.cfg.pin_sleep.pin,GPIO_PIN_SET);
-	HAL_GPIO_WritePin(motor1.cfg.pin_dir.port,motor1.cfg.pin_dir.pin,GPIO_PIN_RESET);
 	/*    */
 	start_motor_lowSpeed(&motor1);
-	HAL_Delay(400);
+	HAL_Delay(200);
 	HAL_TIM_Base_Start_IT(&htim2);
 	HAL_TIM_Base_Start_IT(&htim4);
   /* USER CODE END 2 */
@@ -231,6 +230,9 @@ int main(void)
 		if(flags.motorUpdate){
 			flags.motorUpdate = RESET_FLAG;
 			motor_handler(&motor1);
+			if(!HAL_GPIO_ReadPin(NFAULT1_GPIO_Port,NFAULT1_Pin)){
+				HAL_TIM_PWM_Stop(&htim1,TIM_CHANNEL_1);
+			}
 		}
 		if(flags.sensorRead){
 			flags.sensorRead = RESET_FLAG;
@@ -344,11 +346,11 @@ void update_sensorState			(sensor_t* sensor ,uint16_t len){
 	}
 }
 void sensor_fcallBack_close1(void){
-	if(motor1.startMode == MOTOR_START_LOW_SPEED){
+	/*if(motor1.startMode == MOTOR_START_LOW_SPEED){
 		motor1.cfg.pin_dir.active_lvl = 1;
 		motor1.flag.captureDirEdge 		= 1;
 		motor1.pos = motor_pos_close;
-	}
+	}*/
 }
 void sensor_fcallBack_open1	(void){
 	
@@ -360,15 +362,20 @@ void sensor_fcallBack_close2(void){
 	
 }
 void sensor_fcallBack_open2	(void){
-	if(motor1.startMode == MOTOR_START_LOW_SPEED){
+	/*if(motor1.startMode == MOTOR_START_LOW_SPEED){
 		motor1.cfg.pin_dir.active_lvl = 0;
 		motor1.flag.captureDirEdge 		= 1;
 		motor1.pos = motor_pos_open;
-	}
+	}*/
 }
 void sensor_hcallBack_close1(void){
 	if(motor1.startMode == MOTOR_START_LOW_SPEED){
+		motor1.cfg.pin_dir.active_lvl = 0;
 		motor1.flag.captureDirACT = 1;
+		motor1.pos = motor_pos_close;
+		HAL_TIM_PWM_Stop(&htim1,TIM_CHANNEL_1);
+	}
+	else{
 		motor1.pos = motor_pos_close;
 	}
 }
@@ -383,7 +390,12 @@ void sensor_hcallBack_close2(void){
 }
 void sensor_hcallBack_open2	(void){
 	if(motor1.startMode == MOTOR_START_LOW_SPEED){
+		motor1.cfg.pin_dir.active_lvl = 1;
 		motor1.flag.captureDirACT = 1;
+		motor1.pos = motor_pos_open;
+		HAL_TIM_PWM_Stop(&htim1,TIM_CHANNEL_1);
+	}
+	else{
 		motor1.pos = motor_pos_open;
 	}
 }
