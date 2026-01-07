@@ -27,6 +27,7 @@
 /* USER CODE BEGIN Includes */
 #include "hc165.h"
 #include "motor.h"
+#include "ntc.h"
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -95,6 +96,8 @@ typedef struct{
 uint8_t key_timer = 0;
 volatile Flag_t 	flags 		= {0};
 motor_t motor1 = {0};
+uint16_t dma_buf[100];
+uint32_t sum_buf[5];
 /* USER CODE END PV */
 
 /* Private function prototypes -----------------------------------------------*/
@@ -212,6 +215,32 @@ int main(void)
 	HAL_Delay(200);
 	HAL_TIM_Base_Start_IT(&htim2);
 	HAL_TIM_Base_Start_IT(&htim4);
+	
+	
+	HAL_ADC_Start_DMA(&hadc1,(uint32_t*)dma_buf,100);
+	ntc_t ntc1;
+	ntc_t ntc2;
+	const ntc_hw_t ntc_hw = { 
+		.topology = NTC_TO_GND ,
+		.adc_fullscale = 4095,
+		.vref_V = 3.3f,
+		.R_fixed_ohm = 10000,
+		.adc_min_valid = 0,
+		.adc_max_valid = 4095
+	};
+	const ntc_model_params_t ntc_model_params = { 
+		.model = NTC_MODEL_BETA, 
+		.p.beta.R0_ohm = 10000,
+		.p.beta.beta_K = 3950 ,
+		.p.beta.T0_K = 298.15f,
+	};
+	const ntc_filter_t ntc_filt = {
+		.alpha = 0.5,
+		.filter_on_temp = true,
+	};
+	ntc_init(&ntc1,&ntc_hw,&ntc_model_params,&ntc_filt);
+	ntc_init(&ntc2,&ntc_hw,&ntc_model_params,&ntc_filt);
+	
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -237,11 +266,14 @@ int main(void)
 		if(flags.sensorRead){
 			flags.sensorRead = RESET_FLAG;
 			sensor_handler(sensors,5);
+			
 		}
 		// قبلش بايد نمونه کليد رو آپديت کنم از hc165
 		if(flags.keyRead){ // update key state
 			flags.keyRead = RESET_FLAG;
 			keys_handler(keys,2);
+			ntc_update_adc(&ntc1,(uint16_t)(sum_buf[1]/20));
+			ntc_update_adc(&ntc2,(uint16_t)(sum_buf[2]/20));
 		}
   }
   /* USER CODE END 3 */
@@ -439,6 +471,18 @@ void update_keys_and_sensors_smple(uint8_t sample,key_t* key,sensor_t* sensor){
 	sensor[LASER_OUTPUT].newSample = HC165_CONVERSION_TO_BIT(sample,SWITCH_LASER1);
 	sensor[CLOSE_MICRO_SWITCH2].newSample = HC165_CONVERSION_TO_BIT(sample,SWITCH_CLOSE2);
 	sensor[OPEN_MICRO_SWITCH2].newSample = HC165_CONVERSION_TO_BIT(sample,SWITCH_OPEN2);
+}
+//adc
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef* hadc){
+	if(hadc->Instance == ADC1){
+		for(uint8_t i = 0; i < 20;i+=5){
+			sum_buf[0] += dma_buf[i + 0];
+			sum_buf[1] += dma_buf[i + 1];
+			sum_buf[2] += dma_buf[i + 2];
+			sum_buf[3] += dma_buf[i + 3];
+			sum_buf[4] += dma_buf[i + 4];
+		}
+	}
 }
 /* USER CODE END 4 */
 
