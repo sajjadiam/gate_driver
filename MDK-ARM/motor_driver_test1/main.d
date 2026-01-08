@@ -32,4 +32,5 @@ motor_driver_test1/main.o: ..\Core\Src\main.c ..\Core\Inc\main.h \
   ..\Core\Inc\adc.h ..\Core\Inc\dma.h ..\Core\Inc\tim.h \
   ..\Core\Inc\gpio.h ..\Core\Inc\hc165.h ..\Core\Inc\motor.h \
   ..\Core\Inc\trapezoidal.h ..\Core\Inc\ntc.h \
-  C:\Keil_v5\ARM\ARMCLANG\Bin\..\include\stdbool.h
+  C:\Keil_v5\ARM\ARMCLANG\Bin\..\include\stdbool.h \
+  C:\Keil_v5\ARM\ARMCLANG\Bin\..\include\string.h
